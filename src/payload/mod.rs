@@ -54,7 +54,10 @@ impl Payload {
                 format!("{:?}", dat.values)
             };
 
-            return Self::String(Box::from(format!("{} {} ts: {}", values_ret, dat.unit, dat.time_us)));
+            return Self::String(Box::from(format!(
+                "{} {} ts: {}",
+                values_ret, dat.unit, dat.time_us
+            )));
         }
         match String::from_utf8(payload) {
             Ok(str) => {
