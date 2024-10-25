@@ -34,6 +34,7 @@ clap = { version = "4", features = ["deprecated", "derive", "env", "wrap_help"] 
 crossterm = "0.27"
 ego-tree = "0.10"
 rand = "0.9"
+prost = "0.13.3"
 ratatui = "0.26"
 ratatui-binary-data-widget = { git = "https://github.com/EdJoPaTo/ratatui-binary-data-widget", branch = "main" }
 ratatui-logline-table = { git = "https://github.com/EdJoPaTo/ratatui-logline-table", branch = "main" }
