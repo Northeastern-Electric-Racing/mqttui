@@ -1,3 +1,6 @@
+use std::collections::VecDeque;
+
+use prost::Message;
 use serde::Serialize;
 
 pub use self::json::tree_items as tree_items_from_json;
@@ -7,6 +10,16 @@ pub use self::messagepack::tree_items::tree_items as tree_items_from_messagepack
 mod json;
 mod json_selector;
 mod messagepack;
+
+#[derive(Clone, PartialEq, Message, Serialize)]
+struct ServerDataSer {
+    #[prost(float, repeated, tag = "4")]
+    pub values: Vec<f32>,
+    #[prost(string, tag = "2")]
+    pub unit: String,
+    #[prost(uint64, tag = "3")]
+    pub time_us: u64,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
@@ -34,6 +47,15 @@ impl Payload {
     }
 
     pub fn unlimited(payload: Vec<u8>) -> Self {
+        if let Ok(dat) = ServerDataSer::decode(VecDeque::from(payload.clone())) {
+            let values_ret = if dat.values.len() == 1 {
+                dat.values.first().unwrap().to_string()
+            } else {
+                format!("{:?}", dat.values)
+            };
+
+            return Self::String(Box::from(format!("{} {}", values_ret, dat.unit)));
+        }
         match String::from_utf8(payload) {
             Ok(str) => {
                 serde_json::from_str(&str).map_or_else(|_| Self::String(str.into()), Self::Json)
