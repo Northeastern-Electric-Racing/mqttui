@@ -2,3 +2,5 @@
 
 /perf.data*
 /flamegraph.svg
+
+*.nix
