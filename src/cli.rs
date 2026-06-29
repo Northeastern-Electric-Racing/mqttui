@@ -1,8 +1,7 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use clap::{Args, Parser, Subcommand, ValueHint};
 use url::Url;
 
-#[allow(clippy::doc_markdown)]
 #[derive(Debug, Subcommand)]
 pub enum Subcommands {
     /// Clean retained messages from the broker.
@@ -114,7 +113,7 @@ pub enum Subcommands {
     },
 }
 
-#[allow(clippy::doc_markdown)]
+#[expect(clippy::doc_markdown)]
 #[derive(Debug, Parser)]
 #[command(about, version)]
 pub struct Cli {
@@ -128,6 +127,28 @@ pub struct Cli {
         default_value = "#",
     )]
     pub topic: Vec<String>,
+
+    /// Maximum Quality of Service (`QoS`) for subscriptions and publishing.
+    ///
+    /// The lower Quality of Service level for publisher and subscriber is delivered from broker to subscriber.
+    /// So subscribing with 0 will never receive a 1 or 2.
+    /// Publishing with 2 will be received as 1 when subscribed with 1.
+    ///
+    /// - 0: at most once (fire and forget)
+    ///
+    /// - 1: at least once (acknowledged delivery with potential duplicates)
+    ///
+    /// - 2: exactly once (assured delivery without duplicates)
+    #[arg(
+        long,
+        env = "MQTTUI_QOS",
+        value_hint = ValueHint::Other,
+        value_name = "LEVEL",
+        value_parser = clap::value_parser!(u8).range(0..=2),
+        global = true,
+        default_value_t = 2
+    )]
+    pub qos: u8,
 
     /// Truncate the payloads stored to the given size.
     ///
@@ -217,19 +238,19 @@ pub struct MqttConnection {
 
     /// Path to the TLS client certificate file.
     ///
-    /// Used together with --client-key to enable TLS client authentication.
+    /// Used together with --client-private-key to enable TLS client authentication.
     /// The file has to be a DER-encoded X.509 certificate serialized to PEM.
     #[arg(
         long,
         env = "MQTTUI_CLIENT_CERTIFICATE",
         value_hint = ValueHint::FilePath,
         value_name = "FILEPATH",
-        requires = "client_key",
+        requires = "client_private_key",
         global = true,
     )]
     pub client_cert: Option<std::path::PathBuf>,
 
-    /// Path to the TLS client private key.
+    /// Path to the TLS client private key file.
     ///
     /// Used together with --client-cert to enable TLS client authentication.
     /// The file has to be a DER-encoded ASN.1 file in PKCS#8 form serialized to PEM.
@@ -238,10 +259,11 @@ pub struct MqttConnection {
         env = "MQTTUI_CLIENT_PRIVATE_KEY",
         value_hint = ValueHint::FilePath,
         value_name = "FILEPATH",
+        alias = "client-key",
         requires = "client_cert",
         global = true,
     )]
-    pub client_key: Option<std::path::PathBuf>,
+    pub client_private_key: Option<std::path::PathBuf>,
 
     /// Allow insecure TLS connections
     #[arg(long, global = true)]
@@ -303,14 +325,14 @@ impl core::fmt::Display for Broker {
                 if *port == 1883 {
                     write!(fmt, "mqtt://{host}")
                 } else {
-                    write!(fmt, "mqtt://{host}@{port}")
+                    write!(fmt, "mqtt://{host}:{port}")
                 }
             }
             Self::Ssl { host, port } => {
                 if *port == 8883 {
                     write!(fmt, "mqtts://{host}")
                 } else {
-                    write!(fmt, "mqtts://{host}@{port}")
+                    write!(fmt, "mqtts://{host}:{port}")
                 }
             }
             Self::WebSocket(url) | Self::WebSocketSsl(url) => url.fmt(fmt),
@@ -320,6 +342,6 @@ impl core::fmt::Display for Broker {
 
 #[test]
 fn verify() {
-    use clap::CommandFactory;
+    use clap::CommandFactory as _;
     Cli::command().debug_assert();
 }
