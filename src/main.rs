@@ -1,17 +1,8 @@
 use std::time::Duration;
 
 use clap::Parser as _;
-use cli::Subcommands;
-
-mod clean_retained;
-mod cli;
-mod format;
-mod interactive;
-mod log;
-mod mqtt;
-mod payload;
-mod publish;
-mod read_one;
+use mqttui::cli::{self, Subcommands};
+use mqttui::{clean_retained, interactive, log, mqtt, publish, read_one};
 
 fn main() -> anyhow::Result<()> {
     let matches = cli::Cli::parse();
