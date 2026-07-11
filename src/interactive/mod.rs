@@ -9,11 +9,10 @@ use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::{Frame, Terminal, crossterm};
 
+pub use self::mqtt_thread::MqttThread;
 use self::ui::ElementInFocus;
 use crate::payload::Payload;
 use crate::source::{Capabilities, HistorySource};
-
-pub use self::mqtt_thread::MqttThread;
 
 mod clean_retained;
 mod details;
@@ -408,9 +407,7 @@ impl App {
                             .topic_overview
                             .get_selected()
                             .expect("Should have a selected topic when on history view");
-                        self.source
-                            .uncache_topic_entry(&topic, selection)
-                            .is_some()
+                        self.source.uncache_topic_entry(&topic, selection).is_some()
                     } else {
                         false
                     }

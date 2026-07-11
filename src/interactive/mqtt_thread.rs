@@ -61,7 +61,6 @@ impl MqttThread {
             history,
         })
     }
-
 }
 
 impl HistorySource for MqttThread {
