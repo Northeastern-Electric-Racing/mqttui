@@ -124,8 +124,8 @@ fn thread_logic(
                         history.write().unwrap().add(
                             publish.topic,
                             HistoryEntry {
-                                qos: publish.qos,
                                 time: Time::new_now(publish.retain),
+                                meta: crate::format::qos(publish.qos).into(),
                                 payload_size: publish.payload.len(),
                                 payload: Payload::truncated(
                                     publish.payload.into(),

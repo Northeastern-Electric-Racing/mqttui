@@ -101,7 +101,7 @@ mod tests {
 
     fn entry(time: Time, payload: &str) -> HistoryEntry {
         HistoryEntry {
-            qos: rumqttc::QoS::AtMostOnce,
+            meta: "".into(),
             time,
             payload_size: payload.len(),
             payload: Payload::String(payload.into()),

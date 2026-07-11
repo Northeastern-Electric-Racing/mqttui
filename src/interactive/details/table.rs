@@ -7,7 +7,6 @@ use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType};
 use ratatui_logline_table::{State as TableState, Table};
 
-use crate::format;
 use crate::interactive::ui::{BORDERS_TOP_RIGHT, STYLE_BOLD, focus_color};
 use crate::mqtt::HistoryEntry;
 use crate::payload::{JsonSelector, Payload};
@@ -63,7 +62,7 @@ pub fn draw(
         ],
         move |index, entry| {
             let time = entry.time.to_string();
-            let qos = format::qos(entry.qos).to_owned();
+            let meta = entry.meta.to_string();
             let value = match &entry.payload {
                 Payload::Binary(data) => binary_address
                     .and_then(|address| data.get(address).copied())
@@ -82,11 +81,11 @@ pub fn draw(
             if index == last_index {
                 [
                     Line::styled(time, STYLE_BOLD),
-                    Line::styled(qos, STYLE_BOLD),
+                    Line::styled(meta, STYLE_BOLD),
                     Line::styled(value, STYLE_BOLD),
                 ]
             } else {
-                [Line::raw(time), Line::raw(qos), Line::raw(value)]
+                [Line::raw(time), Line::raw(meta), Line::raw(value)]
             }
         },
     )

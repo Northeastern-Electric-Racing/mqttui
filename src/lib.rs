@@ -10,6 +10,7 @@
 
 pub mod clean_retained;
 pub mod cli;
+pub mod cli_zenoh;
 pub mod format;
 pub mod interactive;
 pub mod log;
@@ -18,3 +19,4 @@ pub mod payload;
 pub mod publish;
 pub mod read_one;
 pub mod source;
+pub mod zenoh;

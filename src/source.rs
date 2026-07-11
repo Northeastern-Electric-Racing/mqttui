@@ -44,4 +44,13 @@ impl Capabilities {
             target: target.into(),
         }
     }
+
+    pub fn zenoh(target: String) -> Self {
+        Self {
+            supports_clean: false,
+            meta_header: "Exp/Prio",
+            error_title: "Zenoh Connection Error",
+            target: target.into(),
+        }
+    }
 }
