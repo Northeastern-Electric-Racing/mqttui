@@ -37,6 +37,12 @@ pub struct MqttHistory {
     ids: HashMap<String, NodeId>,
 }
 
+impl Default for MqttHistory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MqttHistory {
     pub fn new() -> Self {
         Self {

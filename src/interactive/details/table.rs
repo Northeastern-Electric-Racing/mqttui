@@ -12,7 +12,7 @@ use crate::interactive::ui::{BORDERS_TOP_RIGHT, STYLE_BOLD, focus_color};
 use crate::mqtt::HistoryEntry;
 use crate::payload::{JsonSelector, Payload};
 
-#[expect(clippy::cast_precision_loss)]
+#[expect(clippy::cast_precision_loss, clippy::too_many_arguments)]
 pub fn draw(
     frame: &mut Frame,
     area: Rect,
@@ -21,6 +21,7 @@ pub fn draw(
     json_selector: &[JsonSelector],
     state: &mut TableState,
     has_focus: bool,
+    meta_header: &str,
 ) {
     let mut title = format!("History ({}", topic_history.len());
 
@@ -89,7 +90,11 @@ pub fn draw(
             }
         },
     )
-    .header([Line::raw("Time"), Line::raw("QoS"), Line::raw("Value")])
+    .header([
+        Line::raw("Time"),
+        Line::raw(meta_header.to_owned()),
+        Line::raw("Value"),
+    ])
     .header_style(STYLE_BOLD)
     .row_highlight_style(Style::new().fg(Color::Black).bg(focus_color))
     .block(

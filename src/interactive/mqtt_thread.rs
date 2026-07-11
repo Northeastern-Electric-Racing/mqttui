@@ -7,6 +7,7 @@ use rumqttc::{Client, Connection, ConnectionError, QoS};
 use crate::interactive::mqtt_history::MqttHistory;
 use crate::mqtt::{HistoryEntry, Time};
 use crate::payload::Payload;
+use crate::source::HistorySource;
 
 type ConnectionErrorArc = Arc<RwLock<Option<ConnectionError>>>;
 type HistoryArc = Arc<RwLock<MqttHistory>>;
@@ -61,7 +62,14 @@ impl MqttThread {
         })
     }
 
-    pub fn has_connection_err(&self) -> Option<String> {
+}
+
+impl HistorySource for MqttThread {
+    fn get_history(&self) -> RwLockReadGuard<'_, MqttHistory> {
+        self.history.read().expect("mqtt history thread panicked")
+    }
+
+    fn connection_err(&self) -> Option<String> {
         self.connection_err
             .read()
             .expect("mqtt history thread panicked")
@@ -69,12 +77,8 @@ impl MqttThread {
             .map(ToString::to_string)
     }
 
-    pub fn get_history(&self) -> RwLockReadGuard<'_, MqttHistory> {
-        self.history.read().expect("mqtt history thread panicked")
-    }
-
     /// Remove from local cache
-    pub fn uncache_topic_entry(&self, topic: &str, index: usize) -> Option<HistoryEntry> {
+    fn uncache_topic_entry(&self, topic: &str, index: usize) -> Option<HistoryEntry> {
         self.history
             .write()
             .expect("mqtt history thread panicked")
@@ -82,7 +86,7 @@ impl MqttThread {
     }
 
     /// Clean on broker
-    pub fn clean_below(&self, topic: &str) -> anyhow::Result<()> {
+    fn clean_below(&self, topic: &str) -> anyhow::Result<()> {
         let topics = self.get_history().get_topics_below(topic);
         for topic in topics {
             self.client.publish(topic, self.qos, true, [])?;
