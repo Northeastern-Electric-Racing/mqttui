@@ -94,7 +94,6 @@ fn f64_from_string_works() {
 
 #[cfg(test)]
 mod parse_tests {
-    use rumqttc::QoS;
 
     use super::*;
     use crate::mqtt::Time;
@@ -102,7 +101,7 @@ mod parse_tests {
     #[test]
     fn retained() {
         let entry = HistoryEntry {
-            qos: QoS::AtMostOnce,
+            meta: "".into(),
             time: Time::Retained,
             payload_size: 42,
             payload: Payload::unlimited(vec![]),
@@ -116,7 +115,7 @@ mod parse_tests {
         use serde_json::{Number, Value};
         let date = Time::datetime_example();
         let entry = HistoryEntry {
-            qos: QoS::AtMostOnce,
+            meta: "".into(),
             time: Time::Local(date),
             payload_size: 42,
             payload: Payload::Json(Value::Number(Number::from_f64(12.3).unwrap())),
@@ -130,7 +129,7 @@ mod parse_tests {
     fn messagepack_number_works() {
         let date = Time::datetime_example();
         let entry = HistoryEntry {
-            qos: QoS::AtMostOnce,
+            meta: "".into(),
             time: Time::Local(date),
             payload_size: 42,
             payload: Payload::MessagePack(rmpv::Value::F64(12.3)),

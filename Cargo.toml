@@ -51,6 +51,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tui-tree-widget = "0.24"
 url = "2"
+zenoh = "1.9.0"
 
 # https://crates.io/crates/cargo-deb
 [package.metadata.deb]
@@ -58,6 +59,7 @@ depends = ""
 section = "net"
 assets = [
 	["target/release/mqttui", "/usr/bin/", "755"],
+	["target/release/zenohui", "/usr/bin/", "755"],
 	["CHANGELOG.md", "/usr/share/doc/mqttui/", "644"],
 	["LICENSE", "/usr/share/licenses/mqttui/", "644"],
 	["README.md", "/usr/share/doc/mqttui/", "644"],
@@ -66,6 +68,10 @@ assets = [
 	["target/completions/mqttui.fish", "/usr/share/fish/completions/", "644"],
 	["target/completions/_mqttui", "/usr/share/zsh/site-functions/", "644"],
 
+	["target/completions/zenohui.bash", "/usr/share/bash-completion/completions/zenohui", "644"],
+	["target/completions/zenohui.fish", "/usr/share/fish/completions/", "644"],
+	["target/completions/_zenohui", "/usr/share/zsh/site-functions/", "644"],
+
 	["target/manpages/*", "/usr/share/man/man1/", "644"],
 ]
 
@@ -73,6 +79,7 @@ assets = [
 [package.metadata.generate-rpm]
 assets = [
 	{ source = "target/release/mqttui", dest = "/usr/bin/", mode = "755" },
+	{ source = "target/release/zenohui", dest = "/usr/bin/", mode = "755" },
 	{ source = "CHANGELOG.md", dest = "/usr/share/doc/mqttui/", mode = "644", doc = true },
 	{ source = "LICENSE", dest = "/usr/share/licenses/mqttui/", mode = "644", doc = true },
 	{ source = "README.md", dest = "/usr/share/doc/mqttui/", mode = "644", doc = true },
@@ -80,6 +87,10 @@ assets = [
 	{ source = "target/completions/mqttui.bash", dest = "/usr/share/bash-completion/completions/mqttui", mode = "644" },
 	{ source = "target/completions/mqttui.fish", dest = "/usr/share/fish/vendor_completions.d/", mode = "644" },
 	{ source = "target/completions/_mqttui", dest = "/usr/share/zsh/site-functions/", mode = "644" },
+
+	{ source = "target/completions/zenohui.bash", dest = "/usr/share/bash-completion/completions/zenohui", mode = "644" },
+	{ source = "target/completions/zenohui.fish", dest = "/usr/share/fish/vendor_completions.d/", mode = "644" },
+	{ source = "target/completions/_zenohui", dest = "/usr/share/zsh/site-functions/", mode = "644" },
 
 	{ source = "target/manpages/*", dest = "/usr/share/man/man1/", mode = "644", doc = true },
 ]

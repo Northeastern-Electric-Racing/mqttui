@@ -8,17 +8,17 @@ use ratatui::layout::{Alignment, Position, Rect};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::{Frame, Terminal, crossterm};
-use rumqttc::{Client, Connection, QoS};
 
+pub use self::mqtt_thread::MqttThread;
 use self::ui::ElementInFocus;
-use crate::cli::Broker;
 use crate::payload::Payload;
+use crate::source::{Capabilities, HistorySource};
 
 mod clean_retained;
 mod details;
 mod footer;
 mod mqtt_error_widget;
-mod mqtt_history;
+pub mod mqtt_history;
 mod mqtt_thread;
 mod topic_overview;
 mod ui;
@@ -56,17 +56,8 @@ fn reset_terminal() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn show(
-    client: Client,
-    connection: Connection,
-    broker: &Broker,
-    subscribe_topic: Vec<String>,
-    qos: QoS,
-    payload_size_limit: usize,
-) -> anyhow::Result<()> {
-    let mqtt_thread =
-        mqtt_thread::MqttThread::new(client, connection, subscribe_topic, qos, payload_size_limit)?;
-    let app = App::new(broker, mqtt_thread);
+pub fn show(source: Box<dyn HistorySource>, capabilities: Capabilities) -> anyhow::Result<()> {
+    let app = App::new(source, capabilities);
 
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic| {
@@ -147,20 +138,23 @@ where
 }
 
 pub struct App {
+    caps: Capabilities,
     details: details::Details,
     focus: ElementInFocus,
     footer: footer::Footer,
-    mqtt_thread: mqtt_thread::MqttThread,
+    source: Box<dyn HistorySource>,
     topic_overview: topic_overview::TopicOverview,
 }
 
 impl App {
-    fn new(broker: &Broker, mqtt_thread: mqtt_thread::MqttThread) -> Self {
+    fn new(source: Box<dyn HistorySource>, caps: Capabilities) -> Self {
+        let footer = footer::Footer::new(&caps.target);
         Self {
+            caps,
             details: details::Details::default(),
             focus: ElementInFocus::TopicOverview,
-            footer: footer::Footer::new(broker),
-            mqtt_thread,
+            footer,
+            source,
             topic_overview: topic_overview::TopicOverview::default(),
         }
     }
@@ -169,14 +163,14 @@ impl App {
         let Some(topic) = self.topic_overview.get_selected() else {
             return false;
         };
-        self.mqtt_thread.get_history().get(&topic).is_some()
+        self.source.get_history().get(&topic).is_some()
     }
 
     fn can_switch_to_payload(&self) -> bool {
         let Some(topic) = self.topic_overview.get_selected() else {
             return false;
         };
-        self.mqtt_thread
+        self.source
             .get_history()
             .get(&topic)
             .and_then(|entries| {
@@ -194,7 +188,7 @@ impl App {
     /// On current topic with the current history table index
     fn get_selected_payload(&self) -> Option<Payload> {
         let topic = self.topic_overview.get_selected()?;
-        self.mqtt_thread
+        self.source
             .get_history()
             .get(&topic)
             .and_then(|entries| {
@@ -249,7 +243,7 @@ impl App {
                     let page_jump = (self.topic_overview.last_area.height / 3) as usize;
                     self.topic_overview.state.scroll_down(page_jump)
                 }
-                KeyCode::Backspace | KeyCode::Delete => {
+                KeyCode::Backspace | KeyCode::Delete if self.caps.supports_clean => {
                     if let Some(topic) = self.topic_overview.get_selected() {
                         self.focus = ElementInFocus::CleanRetainedPopup(topic);
                         true
@@ -413,9 +407,7 @@ impl App {
                             .topic_overview
                             .get_selected()
                             .expect("Should have a selected topic when on history view");
-                        self.mqtt_thread
-                            .uncache_topic_entry(&topic, selection)
-                            .is_some()
+                        self.source.uncache_topic_entry(&topic, selection).is_some()
                     } else {
                         false
                     }
@@ -424,7 +416,7 @@ impl App {
             },
             ElementInFocus::CleanRetainedPopup(topic) => {
                 if matches!(key.code, KeyCode::Enter | KeyCode::Char(' ')) {
-                    self.mqtt_thread.clean_below(topic)?;
+                    self.source.clean_below(topic)?;
                 }
                 self.focus = ElementInFocus::TopicOverview;
                 true
@@ -530,7 +522,7 @@ impl App {
     // Returns `true` when selection changed
     fn search_select(&mut self, advance: SearchSelection) -> bool {
         let selection = self.topic_overview.get_selected();
-        let history = self.mqtt_thread.get_history();
+        let history = self.source.get_history();
         let mut topics = history
             .get_all_topics()
             .into_iter()
@@ -579,7 +571,7 @@ impl App {
     // Returns `true` when the opened topics changed
     fn open_all_search_matches(&mut self) -> bool {
         let topics = self
-            .mqtt_thread
+            .source
             .get_history()
             .get_all_topics()
             .into_iter()
@@ -601,7 +593,7 @@ impl App {
         const HEADER_HEIGHT: u16 = 1;
         const FOOTER_HEIGHT: u16 = 1;
 
-        let connection_error = self.mqtt_thread.has_connection_err();
+        let connection_error = self.source.connection_err();
 
         let area = frame.area();
         let Rect { width, height, .. } = area;
@@ -641,15 +633,10 @@ impl App {
 
         self.footer.draw(frame, footer_area, self);
         if let Some(connection_error) = connection_error {
-            mqtt_error_widget::draw(
-                frame,
-                error_area,
-                "MQTT Connection Error",
-                &connection_error,
-            );
+            mqtt_error_widget::draw(frame, error_area, self.caps.error_title, &connection_error);
         }
 
-        let history = self.mqtt_thread.get_history();
+        let history = self.source.get_history();
 
         let overview_area = self
             .topic_overview
@@ -664,8 +651,13 @@ impl App {
                     ..main_area
                 };
 
-                self.details
-                    .draw(frame, details_area, topic_history, &self.focus);
+                self.details.draw(
+                    frame,
+                    details_area,
+                    topic_history,
+                    &self.focus,
+                    self.caps.meta_header,
+                );
 
                 Rect {
                     width: x,

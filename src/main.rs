@@ -1,17 +1,10 @@
 use std::time::Duration;
 
 use clap::Parser as _;
-use cli::Subcommands;
-
-mod clean_retained;
-mod cli;
-mod format;
-mod interactive;
-mod log;
-mod mqtt;
-mod payload;
-mod publish;
-mod read_one;
+use mqttui::cli::{self, Subcommands};
+use mqttui::interactive::MqttThread;
+use mqttui::source::Capabilities;
+use mqttui::{clean_retained, interactive, log, mqtt, publish, read_one};
 
 fn main() -> anyhow::Result<()> {
     let matches = cli::Cli::parse();
@@ -75,14 +68,15 @@ fn main() -> anyhow::Result<()> {
             publish::eventloop(&client, connection, verbose);
         }
         None => {
-            interactive::show(
+            let mqtt_thread = MqttThread::new(
                 client.clone(),
                 connection,
-                &broker,
                 matches.topic,
                 qos,
                 matches.payload_size_limit,
             )?;
+            let capabilities = Capabilities::mqtt(broker.to_string());
+            interactive::show(Box::new(mqtt_thread), capabilities)?;
             client.disconnect()?;
         }
     }

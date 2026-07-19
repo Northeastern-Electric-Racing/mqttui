@@ -37,6 +37,12 @@ pub struct MqttHistory {
     ids: HashMap<String, NodeId>,
 }
 
+impl Default for MqttHistory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MqttHistory {
     pub fn new() -> Self {
         Self {
@@ -175,8 +181,8 @@ impl MqttHistory {
     pub fn example() -> Self {
         fn entry(payload: &str) -> HistoryEntry {
             HistoryEntry {
-                qos: rumqttc::QoS::AtLeastOnce,
                 time: crate::mqtt::Time::new_now(false),
+                meta: "AtLeastOnce".into(),
                 payload_size: payload.len(),
                 payload: crate::payload::Payload::unlimited(payload.into()),
             }

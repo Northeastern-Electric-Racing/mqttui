@@ -1,1 +1,0 @@
-/home/jack/Documents/nixos/shell-rust.nix

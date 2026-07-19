@@ -30,6 +30,7 @@ impl Details {
         full_area: Rect,
         topic_history: &[HistoryEntry],
         focus: &ElementInFocus,
+        meta_header: &str,
     ) {
         let entry = topic_history
             .get(self.selected_history_index(topic_history.len()))
@@ -62,6 +63,7 @@ impl Details {
             json_selector,
             &mut self.table_state,
             matches!(focus, ElementInFocus::HistoryTable),
+            meta_header,
         );
     }
 }

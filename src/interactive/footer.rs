@@ -3,7 +3,6 @@ use ratatui::layout::{Position, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
-use crate::cli::Broker;
 use crate::interactive::{App, ElementInFocus};
 
 const VERSION_TEXT: &str = concat!(" mqttui ", env!("CARGO_PKG_VERSION"), " ");
@@ -19,10 +18,10 @@ pub struct Footer {
 }
 
 impl Footer {
-    pub fn new(broker: &Broker) -> Self {
+    pub fn new(target: &str) -> Self {
         Self {
-            broker: format!(" {broker} ").into(),
-            full_info: format!("{VERSION_TEXT}@ {broker} ").into(),
+            broker: format!(" {target} ").into(),
+            full_info: format!("{VERSION_TEXT}@ {target} ").into(),
         }
     }
 
@@ -50,7 +49,7 @@ impl Footer {
                 if !app.topic_overview.state.opened().is_empty() {
                     add!("O", "Close all");
                 }
-                if app.topic_overview.get_selected().is_some() {
+                if app.caps.supports_clean && app.topic_overview.get_selected().is_some() {
                     add!("Del", "Clean retained");
                 }
                 if app.can_switch_to_payload() {
